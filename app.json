@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "XDownloader",
+    "slug": "xdownloader",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hellohvbert.xdownloader"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0b0d10",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.hellohvbert.xdownloader"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-sharing",
+      "expo-image",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "XDownloader potrzebuje dostępu do galerii, aby zapisywać pobrane media.",
+          "savePhotosPermission": "XDownloader zapisuje pobrane zdjęcia i filmy w galerii.",
+          "granularPermissions": [
+            "photo",
+            "video"
+          ]
+        }
+      ]
+    ],
+    "backgroundColor": "#0b0d10"
+  }
+}
