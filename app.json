@@ -24,7 +24,24 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-sharing",
+      [
+        "expo-sharing",
+        {
+          "android": {
+            "enabled": true,
+            "singleShareMimeTypes": [
+              "text/plain"
+            ]
+          },
+          "ios": {
+            "enabled": true,
+            "activationRule": {
+              "supportsText": true,
+              "supportsWebUrlWithMaxCount": 1
+            }
+          }
+        }
+      ],
       "expo-image",
       [
         "expo-media-library",
@@ -38,6 +55,7 @@
         }
       ]
     ],
-    "backgroundColor": "#0b0d10"
+    "backgroundColor": "#0b0d10",
+    "scheme": "xdownloader"
   }
 }

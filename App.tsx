@@ -2,10 +2,11 @@ import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import * as Sharing from 'expo-sharing';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  AppState,
   FlatList,
   KeyboardAvoidingView,
   Linking,
@@ -47,6 +48,7 @@ function Main() {
   const [link, setLink] = useState('');
   const [status, setStatus] = useState<Status>({ kind: 'idle' });
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const busyRef = useRef(false);
 
   useEffect(() => {
     loadHistory().then(setHistory);
@@ -65,12 +67,14 @@ function Main() {
     if (text) setLink(text.trim());
   };
 
-  const download = async () => {
-    const id = parseTweetId(link);
+  const download = async (input: string = link) => {
+    if (busyRef.current) return;
+    const id = parseTweetId(input);
     if (!id) {
       setStatus({ kind: 'error', label: 'To nie wygląda na link do posta z X/Twittera.' });
       return;
     }
+    busyRef.current = true;
     try {
       setStatus({ kind: 'busy', label: 'Szukam mediów…' });
       const tweet = await fetchTweetMedia(id);
@@ -96,8 +100,30 @@ function Main() {
       });
     } catch (e) {
       setStatus({ kind: 'error', label: e instanceof Error ? e.message : 'Coś poszło nie tak.' });
+    } finally {
+      busyRef.current = false;
     }
   };
+
+  // Links shared to the app from X (or any other app) via the system share sheet.
+  const downloadRef = useRef(download);
+  downloadRef.current = download;
+  useEffect(() => {
+    const handleShare = () => {
+      const text = readIncomingShare();
+      if (!text) return;
+      setLink(text);
+      if (parseTweetId(text)) downloadRef.current(text);
+      else setStatus({ kind: 'error', label: 'Udostępniona treść nie zawiera linku do posta.' });
+    };
+    handleShare();
+    const appState = AppState.addEventListener('change', (s) => s === 'active' && handleShare());
+    const url = Linking.addEventListener('url', handleShare);
+    return () => {
+      appState.remove();
+      url.remove();
+    };
+  }, []);
 
   const share = async (entry: HistoryEntry) => {
     const available = entry.items.filter((i) => fileExists(i.localUri));
@@ -169,7 +195,7 @@ function Main() {
                   autoCorrect={false}
                   keyboardType="url"
                   returnKeyType="go"
-                  onSubmitEditing={download}
+                  onSubmitEditing={() => download()}
                   editable={!busy}
                 />
                 <Pressable onPress={link ? () => setLink('') : paste} style={styles.pasteBtn} disabled={busy}>
@@ -178,7 +204,7 @@ function Main() {
               </View>
 
               <Pressable
-                onPress={download}
+                onPress={() => download()}
                 disabled={busy || !link.trim()}
                 style={({ pressed }) => [
                   styles.button,
@@ -262,6 +288,24 @@ function HistoryRow({
       </View>
     </Pressable>
   );
+}
+
+/** Returns text/URL shared into the app (and consumes it), or null. */
+function readIncomingShare(): string | null {
+  try {
+    const payloads = Sharing.getSharedPayloads();
+    if (!payloads.length) return null;
+    Sharing.clearSharedPayloads();
+    const text = payloads
+      .filter((p) => p.shareType === 'text' || p.shareType === 'url')
+      .map((p) => p.value)
+      .join(' ')
+      .trim();
+    return text || null;
+  } catch {
+    // Not supported (e.g. Expo Go / web).
+    return null;
+  }
 }
 
 function tweetUrl(e: HistoryEntry) {
