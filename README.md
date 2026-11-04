@@ -31,6 +31,14 @@ npx eas-cli@latest build -p android --profile preview   # gotowy plik .apk
 Odbieranie linków z menu „Udostępnij” wymaga natywnego builda (development lub preview) — w Expo Go nie zadziała.
 Na iOS rozszerzenie korzysta z App Group `group.com.hellohvbert.xdownloader`; EAS Build skonfiguruje ją automatycznie.
 
+### Gotowy plik .apk z GitHuba
+
+Każdy push buduje APK w GitHub Actions (`.github/workflows/android-apk.yml`).
+Wejdź w zakładkę **Actions → Android APK → ostatni przebieg**, pobierz artefakt
+`xdownloader-apk` (zip z plikiem `app-release.apk`), rozpakuj na telefonie i zainstaluj
+(Android zapyta o zgodę na instalację z nieznanych źródeł). APK jest podpisany kluczem debug —
+do prywatnego użytku, nie do Google Play.
+
 ## Skrypty
 
 ```bash
