@@ -18,9 +18,10 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { deleteLocalFiles, downloadTweet, fileExists } from './src/download';
-import { HistoryEntry, loadHistory, saveHistory } from './src/history';
+import { deleteLocalFiles, downloadTweet } from './src/download';
+import { HistoryEntry, loadHistory, SavedItem, saveHistory } from './src/history';
 import { fetchTweetMedia, parseTweetId } from './src/twitter';
+import { Viewer } from './src/Viewer';
 
 const C = {
   bg: '#0b0d10',
@@ -49,6 +50,7 @@ function Main() {
   const [status, setStatus] = useState<Status>({ kind: 'idle' });
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const busyRef = useRef(false);
+  const [viewing, setViewing] = useState<HistoryEntry | null>(null);
 
   useEffect(() => {
     loadHistory().then(setHistory);
@@ -125,20 +127,16 @@ function Main() {
     };
   }, []);
 
-  const share = async (entry: HistoryEntry) => {
-    const available = entry.items.filter((i) => fileExists(i.localUri));
-    if (!available.length) {
-      Alert.alert('Brak pliku', 'Plik został usunięty z pamięci aplikacji. Pobierz ponownie?', [
-        { text: 'Anuluj', style: 'cancel' },
-        { text: 'Pobierz', onPress: () => setLink(tweetUrl(entry)) },
-      ]);
-      return;
-    }
+  const share = async (item: SavedItem) => {
     if (!(await Sharing.isAvailableAsync())) return;
-    const item = available[0];
     await Sharing.shareAsync(item.localUri, {
       mimeType: item.type === 'photo' ? 'image/jpeg' : 'video/mp4',
     });
+  };
+
+  const redownload = (entry: HistoryEntry) => {
+    setViewing(null);
+    download(tweetUrl(entry));
   };
 
   const remove = (entry: HistoryEntry) => {
@@ -150,6 +148,7 @@ function Main() {
         onPress: () => {
           deleteLocalFiles(entry.items);
           updateHistory((prev) => prev.filter((e) => e.id !== entry.id));
+          setViewing(null);
         },
       },
     ]);
@@ -241,32 +240,41 @@ function Main() {
           renderItem={({ item }) => (
             <HistoryRow
               entry={item}
-              onShare={() => share(item)}
+              onPress={() => setViewing(item)}
               onOpen={() => Linking.openURL(tweetUrl(item))}
               onDelete={() => remove(item)}
             />
           )}
         />
       </KeyboardAvoidingView>
+      <Viewer
+        key={viewing?.id}
+        entry={viewing}
+        onClose={() => setViewing(null)}
+        onShare={share}
+        onOpenPost={(e) => Linking.openURL(tweetUrl(e))}
+        onDelete={remove}
+        onRedownload={redownload}
+      />
     </SafeAreaView>
   );
 }
 
 function HistoryRow({
   entry,
-  onShare,
+  onPress,
   onOpen,
   onDelete,
 }: {
   entry: HistoryEntry;
-  onShare: () => void;
+  onPress: () => void;
   onOpen: () => void;
   onDelete: () => void;
 }) {
   const first = entry.items[0];
   const hasVideo = entry.items.some((i) => i.type !== 'photo');
   return (
-    <Pressable onPress={onShare} onLongPress={onDelete} style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}>
+    <Pressable onPress={onPress} onLongPress={onDelete} style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}>
       <View>
         <Image source={first?.thumbnail || undefined} style={styles.thumb} contentFit="cover" />
         {hasVideo && <Text style={styles.badge}>▶</Text>}

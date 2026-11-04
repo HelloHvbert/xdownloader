@@ -53,7 +53,8 @@
             "video"
           ]
         }
-      ]
+      ],
+      "expo-video"
     ],
     "backgroundColor": "#0b0d10",
     "scheme": "xdownloader"

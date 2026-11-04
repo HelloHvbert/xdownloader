@@ -5,7 +5,7 @@ Prosta aplikacja mobilna (Expo / React Native) do pobierania zdjęć, filmów i 
 - pole na link + przycisk **Wklej** ze schowka
 - pobiera wszystkie media z posta w najlepszej jakości (zdjęcia w `orig`, filmy w najwyższym bitrate)
 - zapisuje do galerii w albumie **XDownloader**
-- lokalna historia pobrań (AsyncStorage) — dotknij, aby udostępnić plik, przytrzymaj, aby usunąć
+- lokalna historia pobrań (AsyncStorage) — dotknij, aby otworzyć podgląd (zdjęcia, filmy, przycisk Udostępnij), przytrzymaj, aby usunąć
 - **Udostępnij → XDownloader** z aplikacji X: link trafia do aplikacji i pobieranie startuje automatycznie
   (Android: intent `SEND text/plain`, iOS: rozszerzenie udostępniania z `expo-sharing`)
 
